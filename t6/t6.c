@@ -11,6 +11,7 @@ typedef struct {
 Grafo* criarGrafo(Moeda* moedas, int numMoedas, int numVertices, int troco) {
     Grafo* g = novoGrafo(numVertices);
 
+    // Evitar alocar vértices que não serão atingíveis para economizar memória
     int* verticesAtingiveis = (int*) calloc(numVertices, sizeof(int));
 
     // Adiciona arcos da origem para as moedas
@@ -52,21 +53,18 @@ Grafo* criarGrafo(Moeda* moedas, int numMoedas, int numVertices, int troco) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* arquivo = fopen(argv[1], "r");
-
     int n, Q;
-    fscanf(arquivo, "%d %d", &n, &Q);
+    scanf("%d %d", &n, &Q);
 
     Moeda* moedas = (Moeda*) malloc(n * sizeof(Moeda));
     for (int i = 0; i < n; i++) {
         int valor, peso, qtde;
-        fscanf(arquivo, "%d %d %d", &valor, &peso, &qtde);
+        scanf("%d %d %d", &valor, &peso, &qtde);
         moedas[i] = (Moeda) {valor, peso, qtde};
     }
 
     int numVertices = 2 + n * (Q + 1);
     Grafo* g = criarGrafo(moedas, n, numVertices, Q);
-    fclose(arquivo);
 
     int* dist = caminhoMinimo(g, 0, numVertices - 1);
     int pesoMinimo = dist[numVertices - 1];
@@ -74,23 +72,22 @@ int main(int argc, char* argv[]) {
     if (pesoMinimo != INT_MAX) {
         printf("%d\n", pesoMinimo);
     } else {
-        int maiorValor = 0;
-        int pesoMinimoMaiorValor = INT_MAX;
+        // Encontrar maior distância menor que o troco
+        for (int i = numVertices - 1; i > 0; i--) {
+            if (dist[i] != INT_MAX) {
+                int maiorValor = i;
 
-        for (int i = 0; i <= Q; i++) {
-            for (int j = Q - i; j < numVertices - 3 - i; j = j + Q + 1) {
-                if (Q - i - 1 < maiorValor) {
-                    break;
+                // Encontrar o maior valor que pode ser formado e seja menor do que o troco
+                while (maiorValor > Q) {
+                    maiorValor = maiorValor - (Q + 1);
                 }
 
-                if (dist[j] < pesoMinimoMaiorValor) {
-                    maiorValor = Q - i - 1;
-                    pesoMinimoMaiorValor = dist[j];
-                }
+                // Subtrair 1 porque o vértice 0 é a origem
+                printf("%d %d\n", maiorValor - 1, dist[i]);
+
+                break;
             }
         }
-
-        printf("%d %d\n", maiorValor, pesoMinimoMaiorValor);
     }
 
     destroiGrafo(g);
